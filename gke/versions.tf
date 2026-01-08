@@ -18,6 +18,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = "~> 1.14"
+    }
   }
 }
 
@@ -41,3 +45,10 @@ provider "helm" {
 }
 
 data "google_client_config" "default" {}
+
+provider "kubectl" {
+  host                   = "https://${google_container_cluster.superplane.endpoint}"
+  token                  = data.google_client_config.default.access_token
+  cluster_ca_certificate = base64decode(google_container_cluster.superplane.master_auth[0].cluster_ca_certificate)
+  load_config_file       = false
+}

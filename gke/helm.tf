@@ -23,31 +23,24 @@ resource "helm_release" "cert_manager" {
 # ClusterIssuer for Let's Encrypt
 # -----------------------------------------------------------------------------
 
-resource "kubernetes_manifest" "letsencrypt_issuer" {
-  manifest = {
-    apiVersion = "cert-manager.io/v1"
-    kind       = "ClusterIssuer"
-    metadata = {
-      name = "letsencrypt-prod"
-    }
-    spec = {
-      acme = {
-        server = "https://acme-v02.api.letsencrypt.org/directory"
-        email  = var.letsencrypt_email
-        privateKeySecretRef = {
-          name = "letsencrypt-prod"
-        }
-        solvers = [{
-          http01 = {
-            ingress = {
-              name        = "superplane"
-              serviceType = "ClusterIP"
-            }
-          }
-        }]
-      }
-    }
-  }
+resource "kubectl_manifest" "letsencrypt_issuer" {
+  yaml_body = <<-YAML
+    apiVersion: cert-manager.io/v1
+    kind: ClusterIssuer
+    metadata:
+      name: letsencrypt-prod
+    spec:
+      acme:
+        server: https://acme-v02.api.letsencrypt.org/directory
+        email: ${var.letsencrypt_email}
+        privateKeySecretRef:
+          name: letsencrypt-prod
+        solvers:
+          - http01:
+              ingress:
+                name: superplane
+                serviceType: ClusterIP
+  YAML
 
   depends_on = [
     helm_release.cert_manager
@@ -215,7 +208,7 @@ resource "helm_release" "superplane" {
     kubernetes_secret.jwt,
     kubernetes_secret.encryption,
     helm_release.cert_manager,
-    kubernetes_manifest.letsencrypt_issuer,
+    kubectl_manifest.letsencrypt_issuer,
     google_sql_database.superplane
   ]
 }
