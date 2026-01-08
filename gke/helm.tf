@@ -137,6 +137,12 @@ resource "helm_release" "superplane" {
     value = var.static_ip_name
   }
 
+  # FrontendConfig annotation - allows HTTP for ACME challenges
+  set {
+    name  = "ingress.annotations.networking\\.gke\\.io/v1beta1\\.FrontendConfig"
+    value = "superplane-frontend-config"
+  }
+
   # SSL configuration
   set {
     name  = "ingress.ssl.enabled"
@@ -209,6 +215,7 @@ resource "helm_release" "superplane" {
     kubernetes_secret.encryption,
     helm_release.cert_manager,
     kubectl_manifest.letsencrypt_issuer,
+    kubectl_manifest.frontend_config,
     google_sql_database.superplane
   ]
 }

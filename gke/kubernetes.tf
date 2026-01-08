@@ -76,3 +76,24 @@ resource "kubernetes_secret" "encryption" {
     ENCRYPTION_KEY = random_password.encryption_key.result
   }
 }
+
+# -----------------------------------------------------------------------------
+# FrontendConfig - Allow HTTP for ACME challenges
+# -----------------------------------------------------------------------------
+
+resource "kubectl_manifest" "frontend_config" {
+  yaml_body = <<-YAML
+    apiVersion: networking.gke.io/v1beta1
+    kind: FrontendConfig
+    metadata:
+      name: superplane-frontend-config
+      namespace: ${var.superplane_namespace}
+    spec:
+      redirectToHttps:
+        enabled: false
+  YAML
+
+  depends_on = [
+    kubernetes_namespace.superplane
+  ]
+}
