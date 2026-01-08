@@ -4,6 +4,7 @@ gke.build:
 gke.shell: gke.build
 	@docker run -it --rm \
 	  -v config:/root/.config/gcloud \
-	  -e GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json \
+	  -v $(shell cd .. && pwd):/workspace \
+	  -w /workspace \
 		gke-image:latest /bin/bash
 
