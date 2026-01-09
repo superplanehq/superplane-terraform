@@ -30,9 +30,9 @@ resource "aws_iam_role_policy_attachment" "aws_load_balancer_controller" {
   role       = aws_iam_role.aws_load_balancer_controller.name
 }
 
-# Additional policy for ALB controller
+# Additional policy for NLB controller
 resource "aws_iam_role_policy" "aws_load_balancer_controller" {
-  name = "${var.cluster_name}-alb-controller-policy"
+  name = "${var.cluster_name}-nlb-controller-policy"
   role = aws_iam_role.aws_load_balancer_controller.id
 
   policy = jsonencode({
@@ -78,29 +78,6 @@ resource "aws_iam_role_policy" "aws_load_balancer_controller" {
             "iam:AWSServiceName" = "elasticloadbalancing.amazonaws.com"
           }
         }
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "cognito-idp:DescribeUserPoolClient",
-          "acm:ListCertificates",
-          "acm:DescribeCertificate",
-          "iam:ListServerCertificates",
-          "iam:GetServerCertificate",
-          "waf-regional:GetWebACL",
-          "waf-regional:GetWebACLForResource",
-          "waf-regional:AssociateWebACL",
-          "waf-regional:DisassociateWebACL",
-          "wafv2:GetWebACL",
-          "wafv2:GetWebACLForResource",
-          "wafv2:AssociateWebACL",
-          "wafv2:DisassociateWebACL",
-          "shield:GetSubscriptionState",
-          "shield:DescribeProtection",
-          "shield:CreateProtection",
-          "shield:DeleteProtection"
-        ]
-        Resource = "*"
       }
     ]
   })
@@ -115,10 +92,22 @@ resource "helm_release" "aws_load_balancer_controller" {
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
   namespace  = "kube-system"
+  timeout    = 600
+  wait       = true
 
   set {
     name  = "clusterName"
     value = var.cluster_name
+  }
+
+  set {
+    name  = "region"
+    value = var.region
+  }
+
+  set {
+    name  = "vpcId"
+    value = aws_vpc.superplane.id
   }
 
   set {
@@ -142,6 +131,13 @@ resource "helm_release" "aws_load_balancer_controller" {
   ]
 }
 
+# Wait for the AWS Load Balancer Controller webhook to be fully ready
+resource "time_sleep" "wait_for_alb_controller" {
+  depends_on = [helm_release.aws_load_balancer_controller]
+
+  create_duration = "60s"
+}
+
 # -----------------------------------------------------------------------------
 # cert-manager Helm Release
 # -----------------------------------------------------------------------------
@@ -152,6 +148,8 @@ resource "helm_release" "cert_manager" {
   chart            = "cert-manager"
   namespace        = "cert-manager"
   create_namespace = true
+  timeout          = 600
+  wait             = true
 
   set {
     name  = "installCRDs"
@@ -159,7 +157,7 @@ resource "helm_release" "cert_manager" {
   }
 
   depends_on = [
-    aws_eks_node_group.superplane
+    time_sleep.wait_for_alb_controller
   ]
 }
 
@@ -167,33 +165,71 @@ resource "helm_release" "cert_manager" {
 # ClusterIssuer for Let's Encrypt
 # -----------------------------------------------------------------------------
 
-resource "kubernetes_manifest" "letsencrypt_issuer" {
-  manifest = {
-    apiVersion = "cert-manager.io/v1"
-    kind       = "ClusterIssuer"
-    metadata = {
-      name = "letsencrypt-prod"
-    }
-    spec = {
-      acme = {
-        server = "https://acme-v02.api.letsencrypt.org/directory"
-        email  = var.letsencrypt_email
-        privateKeySecretRef = {
-          name = "letsencrypt-prod"
-        }
-        solvers = [{
-          http01 = {
-            ingress = {
-              class = "alb"
-            }
-          }
-        }]
-      }
-    }
+resource "null_resource" "letsencrypt_issuer" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      kubectl apply -f - <<EOF
+      apiVersion: cert-manager.io/v1
+      kind: ClusterIssuer
+      metadata:
+        name: letsencrypt-prod
+      spec:
+        acme:
+          server: https://acme-v02.api.letsencrypt.org/directory
+          email: ${var.letsencrypt_email}
+          privateKeySecretRef:
+            name: letsencrypt-prod
+          solvers:
+          - http01:
+              ingress:
+                class: nginx
+      EOF
+    EOT
   }
 
   depends_on = [
     helm_release.cert_manager
+  ]
+}
+
+# -----------------------------------------------------------------------------
+# NGINX Ingress Controller with NLB and Static IP
+# -----------------------------------------------------------------------------
+
+resource "helm_release" "nginx_ingress" {
+  name             = "ingress-nginx"
+  repository       = "https://kubernetes.github.io/ingress-nginx"
+  chart            = "ingress-nginx"
+  namespace        = "ingress-nginx"
+  create_namespace = true
+
+  set {
+    name  = "controller.service.type"
+    value = "LoadBalancer"
+  }
+
+  set {
+    name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-type"
+    value = "external"
+  }
+
+  set {
+    name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-nlb-target-type"
+    value = "ip"
+  }
+
+  set {
+    name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-scheme"
+    value = "internet-facing"
+  }
+
+  set {
+    name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-eip-allocations"
+    value = var.eip_allocation_id
+  }
+
+  depends_on = [
+    time_sleep.wait_for_alb_controller
   ]
 }
 
@@ -271,7 +307,7 @@ resource "helm_release" "superplane" {
     value = var.domain_name
   }
 
-  # Ingress configuration for AWS ALB
+  # Ingress configuration for NGINX
   set {
     name  = "ingress.enabled"
     value = "true"
@@ -279,30 +315,10 @@ resource "helm_release" "superplane" {
 
   set {
     name  = "ingress.className"
-    value = "alb"
+    value = "nginx"
   }
 
-  set {
-    name  = "ingress.annotations.alb\\.ingress\\.kubernetes\\.io/scheme"
-    value = "internet-facing"
-  }
-
-  set {
-    name  = "ingress.annotations.alb\\.ingress\\.kubernetes\\.io/target-type"
-    value = "ip"
-  }
-
-  set {
-    name  = "ingress.annotations.alb\\.ingress\\.kubernetes\\.io/listen-ports"
-    value = "[{\"HTTP\": 80}, {\"HTTPS\": 443}]"
-  }
-
-  set {
-    name  = "ingress.annotations.alb\\.ingress\\.kubernetes\\.io/ssl-redirect"
-    value = "443"
-  }
-
-  # SSL configuration
+  # SSL configuration with cert-manager
   set {
     name  = "ingress.ssl.enabled"
     value = "true"
@@ -373,8 +389,8 @@ resource "helm_release" "superplane" {
     kubernetes_secret.jwt,
     kubernetes_secret.encryption,
     helm_release.cert_manager,
-    helm_release.aws_load_balancer_controller,
-    kubernetes_manifest.letsencrypt_issuer,
+    helm_release.nginx_ingress,
+    null_resource.letsencrypt_issuer,
     aws_db_instance.superplane
   ]
 }

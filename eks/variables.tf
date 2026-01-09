@@ -12,6 +12,11 @@ variable "letsencrypt_email" {
   type        = string
 }
 
+variable "eip_allocation_id" {
+  description = "Allocation ID of the pre-created Elastic IP for the load balancer"
+  type        = string
+}
+
 # -----------------------------------------------------------------------------
 # Optional Variables - AWS
 # -----------------------------------------------------------------------------

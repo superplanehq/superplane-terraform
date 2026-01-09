@@ -8,6 +8,9 @@ domain_name = "superplane.example.com"
 # Email for Let's Encrypt certificate notifications
 letsencrypt_email = "admin@example.com"
 
+# Elastic IP allocation ID (create with: aws ec2 allocate-address --domain vpc)
+eip_allocation_id = "eipalloc-xxxxxxxxxxxxxxxxx"
+
 # -----------------------------------------------------------------------------
 # Optional Variables - AWS Region
 # -----------------------------------------------------------------------------

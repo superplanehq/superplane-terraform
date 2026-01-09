@@ -4,12 +4,13 @@ Docker images for managing Superplane infrastructure on different cloud provider
 
 ## Available Images
 
-| Image | Purpose |
-|-------|---------|
-| `Dockerfile.gke` | Google Kubernetes Engine (GKE) on GCP |
+| Image            | Purpose                                 |
+| ---------------- | --------------------------------------- |
+| `Dockerfile.gke` | Google Kubernetes Engine (GKE) on GCP   |
 | `Dockerfile.eks` | Elastic Kubernetes Service (EKS) on AWS |
 
 Each image comes pre-installed with:
+
 - Terraform
 - Helm
 - kubectl
@@ -29,5 +30,6 @@ make eks.shell
 ```
 
 This builds the image and drops you into an interactive shell with:
+
 - Cloud credentials mounted (persisted across sessions)
 - Workspace mounted at `/workspace`

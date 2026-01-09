@@ -69,7 +69,7 @@ output "kubectl_config_command" {
 # Load Balancer Output
 # -----------------------------------------------------------------------------
 
-output "load_balancer_dns" {
-  description = "Get the ALB DNS name after deployment with: kubectl get ingress -n superplane"
-  value       = "Run: kubectl get ingress -n superplane -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}'"
+output "load_balancer_info" {
+  description = "Get the NLB info after deployment"
+  value       = "Run: kubectl get svc -n ingress-nginx ingress-nginx-controller"
 }
