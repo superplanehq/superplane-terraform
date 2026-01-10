@@ -12,10 +12,6 @@ variable "letsencrypt_email" {
   type        = string
 }
 
-variable "eip_allocation_id" {
-  description = "Allocation ID of the pre-created Elastic IP for the load balancer"
-  type        = string
-}
 
 # -----------------------------------------------------------------------------
 # Optional Variables - AWS
@@ -28,7 +24,7 @@ variable "region" {
 }
 
 variable "availability_zones" {
-  description = "Availability zones for the VPC subnets"
+  description = "Availability zones for the VPC subnets (minimum 2 required by AWS)"
   type        = list(string)
   default     = ["us-east-1a", "us-east-1b"]
 }

@@ -13,6 +13,32 @@ resource "kubernetes_namespace" "superplane" {
 }
 
 # -----------------------------------------------------------------------------
+# Default StorageClass (gp3)
+# -----------------------------------------------------------------------------
+
+resource "kubernetes_storage_class" "gp3_default" {
+  metadata {
+    name = "gp3"
+    annotations = {
+      "storageclass.kubernetes.io/is-default-class" = "true"
+    }
+  }
+
+  storage_provisioner = "ebs.csi.aws.com"
+  reclaim_policy      = "Delete"
+  volume_binding_mode = "WaitForFirstConsumer"
+
+  parameters = {
+    type   = "gp3"
+    fsType = "ext4"
+  }
+
+  depends_on = [
+    aws_eks_addon.ebs_csi
+  ]
+}
+
+# -----------------------------------------------------------------------------
 # Database Credentials Secret
 # -----------------------------------------------------------------------------
 

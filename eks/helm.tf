@@ -162,37 +162,6 @@ resource "helm_release" "cert_manager" {
 }
 
 # -----------------------------------------------------------------------------
-# ClusterIssuer for Let's Encrypt
-# -----------------------------------------------------------------------------
-
-resource "null_resource" "letsencrypt_issuer" {
-  provisioner "local-exec" {
-    command = <<-EOT
-      kubectl apply -f - <<EOF
-      apiVersion: cert-manager.io/v1
-      kind: ClusterIssuer
-      metadata:
-        name: letsencrypt-prod
-      spec:
-        acme:
-          server: https://acme-v02.api.letsencrypt.org/directory
-          email: ${var.letsencrypt_email}
-          privateKeySecretRef:
-            name: letsencrypt-prod
-          solvers:
-          - http01:
-              ingress:
-                class: nginx
-      EOF
-    EOT
-  }
-
-  depends_on = [
-    helm_release.cert_manager
-  ]
-}
-
-# -----------------------------------------------------------------------------
 # NGINX Ingress Controller with NLB and Static IP
 # -----------------------------------------------------------------------------
 
@@ -221,11 +190,6 @@ resource "helm_release" "nginx_ingress" {
   set {
     name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-scheme"
     value = "internet-facing"
-  }
-
-  set {
-    name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-eip-allocations"
-    value = var.eip_allocation_id
   }
 
   depends_on = [
@@ -344,6 +308,16 @@ resource "helm_release" "superplane" {
     value = "superplane-tls-secret"
   }
 
+  set {
+    name  = "ingress.ssl.certManager.createClusterIssuer"
+    value = "true"
+  }
+
+  set {
+    name  = "ingress.ssl.certManager.acme.email"
+    value = var.letsencrypt_email
+  }
+
   # Authentication (disabled by default)
   set {
     name  = "authentication.github.enabled"
@@ -390,7 +364,6 @@ resource "helm_release" "superplane" {
     kubernetes_secret.encryption,
     helm_release.cert_manager,
     helm_release.nginx_ingress,
-    null_resource.letsencrypt_issuer,
     aws_db_instance.superplane
   ]
 }

@@ -2,20 +2,20 @@
 # Required Variables
 # -----------------------------------------------------------------------------
 
-# Domain name for SuperPlane (configure DNS after deployment)
+# Domain name for SuperPlane
+# After deployment, create a CNAME record pointing to the NLB hostname
 domain_name = "superplane.example.com"
 
 # Email for Let's Encrypt certificate notifications
 letsencrypt_email = "admin@example.com"
 
-# Elastic IP allocation ID (create with: aws ec2 allocate-address --domain vpc)
-eip_allocation_id = "eipalloc-xxxxxxxxxxxxxxxxx"
-
 # -----------------------------------------------------------------------------
 # Optional Variables - AWS Region
 # -----------------------------------------------------------------------------
 
-# region             = "us-east-1"
+# region = "us-east-1"
+
+# Availability zones (minimum 2 required by AWS for EKS/RDS)
 # availability_zones = ["us-east-1a", "us-east-1b"]
 
 # -----------------------------------------------------------------------------
