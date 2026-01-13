@@ -3,11 +3,17 @@
 # -----------------------------------------------------------------------------
 
 # Domain name for SuperPlane
-# After deployment, create a CNAME record pointing to the NLB hostname
 domain_name = "superplane.example.com"
 
 # Email for Let's Encrypt certificate notifications
 letsencrypt_email = "admin@example.com"
+
+# -----------------------------------------------------------------------------
+# SuperPlane
+# -----------------------------------------------------------------------------
+
+# superplane_image_tag = "stable"  # Options: stable, beta, or specific version like v0.4
+# superplane_namespace = "superplane"
 
 # -----------------------------------------------------------------------------
 # Optional Variables - AWS Region
@@ -41,12 +47,6 @@ letsencrypt_email = "admin@example.com"
 # Optionally provide a database password (otherwise one will be generated)
 # db_password = "your-secure-password"
 
-# -----------------------------------------------------------------------------
-# Optional Variables - SuperPlane
-# -----------------------------------------------------------------------------
-
-# superplane_namespace = "superplane"
-# superplane_image_tag = "stable"  # Options: stable, beta, or specific version like v0.4
 
 # -----------------------------------------------------------------------------
 # Optional Variables - Network
