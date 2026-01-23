@@ -102,3 +102,18 @@ resource "kubernetes_secret" "encryption" {
     ENCRYPTION_KEY = random_password.encryption_key.result
   }
 }
+
+# -----------------------------------------------------------------------------
+# OIDC Key Secret
+# -----------------------------------------------------------------------------
+
+resource "kubernetes_secret" "oidc" {
+  metadata {
+    name      = "superplane-oidc"
+    namespace = kubernetes_namespace.superplane.metadata[0].name
+  }
+
+  data = {
+    "${time_static.oidc_key.unix}.pem" = tls_private_key.oidc.private_key_pem
+  }
+}
