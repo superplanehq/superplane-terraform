@@ -49,3 +49,10 @@ resource "random_password" "encryption_key" {
   length  = 64
   special = false
 }
+
+resource "tls_private_key" "oidc" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "time_static" "oidc_key" {}

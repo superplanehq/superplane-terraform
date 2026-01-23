@@ -207,12 +207,18 @@ resource "helm_release" "superplane" {
     value = "superplane-encryption"
   }
 
+  set {
+    name  = "oidc.secretName"
+    value = "superplane-oidc"
+  }
+
   depends_on = [
     kubernetes_namespace.superplane,
     kubernetes_secret.db_credentials,
     kubernetes_secret.session,
     kubernetes_secret.jwt,
     kubernetes_secret.encryption,
+    kubernetes_secret.oidc,
     helm_release.cert_manager,
     kubectl_manifest.letsencrypt_issuer,
     kubectl_manifest.frontend_config,
