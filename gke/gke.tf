@@ -21,10 +21,23 @@ resource "google_container_cluster" "superplane" {
     workload_pool = "${var.project_id}.svc.id.goog"
   }
 
-  # Private cluster config for security
   private_cluster_config {
-    enable_private_nodes    = false
+    enable_private_nodes    = var.enable_private_nodes
     enable_private_endpoint = false
+    master_ipv4_cidr_block  = var.enable_private_nodes ? var.master_ipv4_cidr_block : null
+  }
+
+  dynamic "master_authorized_networks_config" {
+    for_each = length(var.master_authorized_cidr_blocks) > 0 ? [1] : []
+    content {
+      dynamic "cidr_blocks" {
+        for_each = var.master_authorized_cidr_blocks
+        content {
+          cidr_block   = cidr_blocks.value.cidr_block
+          display_name = cidr_blocks.value.display_name
+        }
+      }
+    }
   }
 
   node_config {

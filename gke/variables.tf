@@ -126,3 +126,28 @@ variable "network" {
   type        = string
   default     = "default"
 }
+
+# -----------------------------------------------------------------------------
+# Optional Variables - Security
+# -----------------------------------------------------------------------------
+
+variable "enable_private_nodes" {
+  description = "Whether to enable private nodes (nodes without public IPs)"
+  type        = bool
+  default     = true
+}
+
+variable "master_authorized_cidr_blocks" {
+  description = "CIDR blocks authorized to access the GKE master (VPN IPs)"
+  type = list(object({
+    cidr_block   = string
+    display_name = string
+  }))
+  default = []
+}
+
+variable "master_ipv4_cidr_block" {
+  description = "CIDR block for the GKE master (required when enable_private_nodes is true)"
+  type        = string
+  default     = "172.16.0.0/28"
+}
