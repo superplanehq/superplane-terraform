@@ -1,4 +1,25 @@
 # -----------------------------------------------------------------------------
+# KMS Key for EKS Secrets Encryption
+# -----------------------------------------------------------------------------
+
+resource "aws_kms_key" "eks_secrets" {
+  count                   = var.enable_secrets_encryption ? 1 : 0
+  description             = "KMS key for EKS secrets encryption - ${var.cluster_name}"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+
+  tags = {
+    Name = "${var.cluster_name}-eks-secrets-key"
+  }
+}
+
+resource "aws_kms_alias" "eks_secrets" {
+  count         = var.enable_secrets_encryption ? 1 : 0
+  name          = "alias/${var.cluster_name}-eks-secrets"
+  target_key_id = aws_kms_key.eks_secrets[0].key_id
+}
+
+# -----------------------------------------------------------------------------
 # EKS Cluster IAM Role
 # -----------------------------------------------------------------------------
 
@@ -35,6 +56,16 @@ resource "aws_eks_cluster" "superplane" {
     subnet_ids              = concat(aws_subnet.public[*].id, aws_subnet.private[*].id)
     endpoint_private_access = true
     endpoint_public_access  = true
+  }
+
+  dynamic "encryption_config" {
+    for_each = var.enable_secrets_encryption ? [1] : []
+    content {
+      provider {
+        key_arn = aws_kms_key.eks_secrets[0].arn
+      }
+      resources = ["secrets"]
+    }
   }
 
   depends_on = [

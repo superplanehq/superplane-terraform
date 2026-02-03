@@ -129,3 +129,13 @@ variable "vpc_cidr" {
   type        = string
   default     = "10.0.0.0/16"
 }
+
+# -----------------------------------------------------------------------------
+# Optional Variables - Security
+# -----------------------------------------------------------------------------
+
+variable "enable_secrets_encryption" {
+  description = "Enable encryption of Kubernetes secrets at rest using KMS. Note: Cannot be enabled on existing clusters."
+  type        = bool
+  default     = false
+}
