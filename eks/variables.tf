@@ -129,3 +129,19 @@ variable "vpc_cidr" {
   type        = string
   default     = "10.0.0.0/16"
 }
+
+# -----------------------------------------------------------------------------
+# Optional Variables - Security
+# -----------------------------------------------------------------------------
+
+variable "vpn_cidr_blocks" {
+  description = "CIDR blocks allowed to access the EKS API server (VPN IPs). Set to restrict public access."
+  type        = list(string)
+  default     = []
+}
+
+variable "enable_public_access" {
+  description = "Whether to enable public access to the EKS API server. Set to false to restrict to VPN only."
+  type        = bool
+  default     = true
+}
