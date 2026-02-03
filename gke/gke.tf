@@ -27,6 +27,17 @@ resource "google_container_cluster" "superplane" {
     enable_private_endpoint = false
   }
 
+  logging_service    = "logging.googleapis.com/kubernetes"
+  monitoring_service = "monitoring.googleapis.com/kubernetes"
+
+  logging_config {
+    enable_components = ["SYSTEM_COMPONENTS", "WORKLOADS"]
+  }
+
+  monitoring_config {
+    enable_components = ["SYSTEM_COMPONENTS"]
+  }
+
   node_config {
     machine_type = var.machine_type
 
