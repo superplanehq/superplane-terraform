@@ -151,3 +151,15 @@ variable "master_ipv4_cidr_block" {
   type        = string
   default     = "172.16.0.0/28"
 }
+
+variable "gke_deletion_protection" {
+  description = "Enable deletion protection on the GKE cluster"
+  type        = bool
+  default     = true
+}
+
+variable "sql_deletion_protection" {
+  description = "Enable deletion protection on the Cloud SQL instance"
+  type        = bool
+  default     = true
+}

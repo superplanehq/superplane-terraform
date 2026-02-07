@@ -33,7 +33,7 @@ resource "google_sql_database_instance" "superplane" {
   database_version = var.db_version
   region           = var.region
 
-  deletion_protection = true
+  deletion_protection = var.sql_deletion_protection
 
   settings {
     tier    = var.db_tier
