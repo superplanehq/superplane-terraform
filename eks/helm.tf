@@ -520,6 +520,46 @@ resource "helm_release" "superplane" {
     value = "superplane-oidc"
   }
 
+  set {
+    name  = "podSecurityContext.runAsNonRoot"
+    value = "true"
+  }
+
+  set {
+    name  = "podSecurityContext.runAsUser"
+    value = "65534"
+  }
+
+  set {
+    name  = "podSecurityContext.fsGroup"
+    value = "65534"
+  }
+
+  set {
+    name  = "securityContext.allowPrivilegeEscalation"
+    value = "false"
+  }
+
+  set {
+    name  = "securityContext.readOnlyRootFilesystem"
+    value = "true"
+  }
+
+  set {
+    name  = "securityContext.runAsNonRoot"
+    value = "true"
+  }
+
+  set {
+    name  = "securityContext.capabilities.drop[0]"
+    value = "ALL"
+  }
+
+  set {
+    name  = "securityContext.seccompProfile.type"
+    value = "RuntimeDefault"
+  }
+
   depends_on = [
     kubernetes_namespace.superplane,
     kubernetes_secret.db_credentials,
