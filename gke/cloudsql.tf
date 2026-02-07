@@ -98,6 +98,12 @@ resource "google_sql_user" "postgres" {
   name     = "postgres"
   instance = google_sql_database_instance.superplane.name
   password = local.db_password
+
+  # Ensure database is deleted before user during destroy
+  # Terraform destroys in reverse dependency order, so database will be destroyed first
+  depends_on = [
+    google_sql_database.superplane
+  ]
 }
 
 # Create the SuperPlane database
