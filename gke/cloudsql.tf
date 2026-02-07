@@ -20,8 +20,19 @@ resource "google_service_networking_connection" "private_vpc_connection" {
   reserved_peering_ranges = [google_compute_global_address.private_ip_range.name]
 
   depends_on = [
-    google_project_service.servicenetworking
+    google_project_service.servicenetworking,
+    time_sleep.wait_for_instance_deletion
   ]
+}
+
+# Wait for Cloud SQL instance to be fully deleted before attempting to delete the connection
+# Using time_sleep avoids circular dependency issues that null_resource polling creates
+resource "time_sleep" "wait_for_instance_deletion" {
+  depends_on = [
+    google_sql_database_instance.superplane
+  ]
+
+  destroy_duration = "60s"
 }
 
 # -----------------------------------------------------------------------------
