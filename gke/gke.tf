@@ -21,17 +21,43 @@ resource "google_container_cluster" "superplane" {
     workload_pool = "${var.project_id}.svc.id.goog"
   }
 
-  # Private cluster config for security
   private_cluster_config {
-    enable_private_nodes    = false
+    enable_private_nodes    = var.enable_private_nodes
     enable_private_endpoint = false
+    master_ipv4_cidr_block  = var.enable_private_nodes ? var.master_ipv4_cidr_block : null
+  }
+
+  dynamic "master_authorized_networks_config" {
+    for_each = length(var.master_authorized_cidr_blocks) > 0 ? [1] : []
+    content {
+      dynamic "cidr_blocks" {
+        for_each = var.master_authorized_cidr_blocks
+        content {
+          cidr_block   = cidr_blocks.value.cidr_block
+          display_name = cidr_blocks.value.display_name
+        }
+      }
+    }
+  }
+
+  logging_service    = "logging.googleapis.com/kubernetes"
+  monitoring_service = "monitoring.googleapis.com/kubernetes"
+
+  logging_config {
+    enable_components = ["SYSTEM_COMPONENTS", "WORKLOADS"]
+  }
+
+  monitoring_config {
+    enable_components = ["SYSTEM_COMPONENTS"]
   }
 
   node_config {
     machine_type = var.machine_type
 
     oauth_scopes = [
-      "https://www.googleapis.com/auth/cloud-platform",
+      "https://www.googleapis.com/auth/devstorage.read_only",
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/monitoring",
     ]
 
     workload_metadata_config {

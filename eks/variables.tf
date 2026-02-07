@@ -139,3 +139,15 @@ variable "enable_secrets_encryption" {
   type        = bool
   default     = false
 }
+
+variable "vpn_cidr_blocks" {
+  description = "CIDR blocks allowed to access the EKS API server (VPN IPs). Set to restrict public access."
+  type        = list(string)
+  default     = []
+}
+
+variable "enable_public_access" {
+  description = "Whether to enable public access to the EKS API server. Set to false to restrict to VPN only."
+  type        = bool
+  default     = true
+}
