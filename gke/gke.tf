@@ -31,7 +31,9 @@ resource "google_container_cluster" "superplane" {
     machine_type = var.machine_type
 
     oauth_scopes = [
-      "https://www.googleapis.com/auth/cloud-platform",
+      "https://www.googleapis.com/auth/devstorage.read_only",
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/monitoring",
     ]
 
     workload_metadata_config {
