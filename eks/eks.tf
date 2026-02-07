@@ -34,7 +34,8 @@ resource "aws_eks_cluster" "superplane" {
   vpc_config {
     subnet_ids              = concat(aws_subnet.public[*].id, aws_subnet.private[*].id)
     endpoint_private_access = true
-    endpoint_public_access  = true
+    endpoint_public_access  = var.enable_public_access
+    public_access_cidrs     = length(var.vpn_cidr_blocks) > 0 ? var.vpn_cidr_blocks : null
   }
 
   enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
