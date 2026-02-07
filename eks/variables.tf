@@ -134,6 +134,12 @@ variable "vpc_cidr" {
 # Optional Variables - Security
 # -----------------------------------------------------------------------------
 
+variable "enable_secrets_encryption" {
+  description = "Enable encryption of Kubernetes secrets at rest using KMS. Note: Cannot be enabled on existing clusters."
+  type        = bool
+  default     = false
+}
+
 variable "vpn_cidr_blocks" {
   description = "CIDR blocks allowed to access the EKS API server (VPN IPs). Set to restrict public access."
   type        = list(string)
