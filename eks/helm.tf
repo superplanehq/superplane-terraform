@@ -330,6 +330,7 @@ resource "helm_release" "nginx_ingress" {
   chart            = "ingress-nginx"
   namespace        = "ingress-nginx"
   create_namespace = true
+  timeout          = 600 # 10 minutes - NLB creation can take time
 
   set {
     name  = "controller.service.type"
