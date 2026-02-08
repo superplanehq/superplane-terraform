@@ -284,6 +284,14 @@ resource "helm_release" "aws_load_balancer_controller" {
     value = aws_iam_role.aws_load_balancer_controller.arn
   }
 
+  # Configure controller to tag resources with cluster tag for security
+  set {
+    name  = "defaultTags"
+    value = jsonencode({
+      "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+    })
+  }
+
   depends_on = [
     aws_eks_node_group.superplane,
     aws_iam_role_policy.aws_load_balancer_controller
@@ -330,7 +338,7 @@ resource "helm_release" "nginx_ingress" {
   chart            = "ingress-nginx"
   namespace        = "ingress-nginx"
   create_namespace = true
-  timeout          = 600 # 10 minutes - NLB creation can take time
+  timeout = 600 # 10 minutes - NLB creation can take time
 
   set {
     name  = "controller.service.type"
