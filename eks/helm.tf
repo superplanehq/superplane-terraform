@@ -88,7 +88,21 @@ resource "aws_iam_role_policy" "aws_load_balancer_controller" {
       {
         Effect = "Allow"
         Action = [
-          "ec2:CreateTags",
+          "ec2:CreateTags"
+        ]
+        Resource = [
+          "arn:aws:ec2:${var.region}:${data.aws_caller_identity.current.account_id}:security-group/*",
+          "arn:aws:ec2:${var.region}:${data.aws_caller_identity.current.account_id}:subnet/*"
+        ]
+        Condition = {
+          StringEquals = {
+            "aws:RequestTag/kubernetes.io/cluster/${var.cluster_name}" = "owned"
+          }
+        }
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "ec2:DeleteTags"
         ]
         Resource = [
@@ -184,12 +198,30 @@ resource "aws_iam_role_policy" "aws_load_balancer_controller" {
       {
         Effect = "Allow"
         Action = [
-          "elasticloadbalancing:AddTags",
+          "elasticloadbalancing:AddTags"
+        ]
+        Resource = [
+          "arn:aws:elasticloadbalancing:${var.region}:${data.aws_caller_identity.current.account_id}:loadbalancer/*",
+          "arn:aws:elasticloadbalancing:${var.region}:${data.aws_caller_identity.current.account_id}:targetgroup/*",
+          "arn:aws:elasticloadbalancing:${var.region}:${data.aws_caller_identity.current.account_id}:listener/net/*/*",
+          "arn:aws:elasticloadbalancing:${var.region}:${data.aws_caller_identity.current.account_id}:listener/app/*/*"
+        ]
+        Condition = {
+          StringEquals = {
+            "aws:RequestTag/kubernetes.io/cluster/${var.cluster_name}" = "owned"
+          }
+        }
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "elasticloadbalancing:RemoveTags"
         ]
         Resource = [
           "arn:aws:elasticloadbalancing:${var.region}:${data.aws_caller_identity.current.account_id}:loadbalancer/*",
-          "arn:aws:elasticloadbalancing:${var.region}:${data.aws_caller_identity.current.account_id}:targetgroup/*"
+          "arn:aws:elasticloadbalancing:${var.region}:${data.aws_caller_identity.current.account_id}:targetgroup/*",
+          "arn:aws:elasticloadbalancing:${var.region}:${data.aws_caller_identity.current.account_id}:listener/net/*/*",
+          "arn:aws:elasticloadbalancing:${var.region}:${data.aws_caller_identity.current.account_id}:listener/app/*/*"
         ]
         Condition = {
           StringEquals = {
@@ -286,10 +318,8 @@ resource "helm_release" "aws_load_balancer_controller" {
 
   # Configure controller to tag resources with cluster tag for security
   set {
-    name  = "defaultTags"
-    value = jsonencode({
-      "kubernetes.io/cluster/${var.cluster_name}" = "owned"
-    })
+    name  = "defaultTags.kubernetes\\.io/cluster/${var.cluster_name}"
+    value = "owned"
   }
 
   depends_on = [
@@ -338,7 +368,7 @@ resource "helm_release" "nginx_ingress" {
   chart            = "ingress-nginx"
   namespace        = "ingress-nginx"
   create_namespace = true
-  timeout = 600 # 10 minutes - NLB creation can take time
+  timeout          = 1200 # 20 minutes - NLB deletion can take longer than creation
 
   set {
     name  = "controller.service.type"

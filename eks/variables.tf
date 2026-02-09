@@ -104,6 +104,12 @@ variable "db_password" {
   sensitive   = true
 }
 
+variable "rds_deletion_protection" {
+  description = "Enable deletion protection for RDS instance. Set to false to allow deletion during terraform destroy."
+  type        = bool
+  default     = true
+}
+
 # -----------------------------------------------------------------------------
 # Optional Variables - SuperPlane
 # -----------------------------------------------------------------------------

@@ -41,6 +41,11 @@ resource "aws_subnet" "public" {
     "kubernetes.io/role/elb"                    = "1"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
+
+  # Ensure EKS resources are deleted before subnets during destroy
+  lifecycle {
+    create_before_destroy = false
+  }
 }
 
 # -----------------------------------------------------------------------------
@@ -59,6 +64,11 @@ resource "aws_subnet" "private" {
     "kubernetes.io/role/internal-elb"           = "1"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
+
+  # Ensure EKS resources are deleted before subnets during destroy
+  lifecycle {
+    create_before_destroy = false
+  }
 }
 
 # -----------------------------------------------------------------------------
@@ -73,6 +83,11 @@ resource "aws_eip" "nat" {
   }
 
   depends_on = [aws_internet_gateway.superplane]
+
+  # Ensure EIP is released after NAT Gateway is deleted
+  lifecycle {
+    create_before_destroy = false
+  }
 }
 
 resource "aws_nat_gateway" "superplane" {

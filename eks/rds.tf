@@ -53,6 +53,11 @@ resource "aws_db_subnet_group" "superplane" {
   tags = {
     Name = "${var.cluster_name}-db-subnet-group"
   }
+
+  # Ensure RDS instance is deleted before subnet group during destroy
+  lifecycle {
+    create_before_destroy = false
+  }
 }
 
 # -----------------------------------------------------------------------------
@@ -115,7 +120,7 @@ resource "aws_db_instance" "superplane" {
   backup_window           = "03:00-04:00"
   maintenance_window      = "Mon:04:00-Mon:05:00"
 
-  deletion_protection = true
+  deletion_protection = var.rds_deletion_protection
   skip_final_snapshot = false
   final_snapshot_identifier = "${var.db_instance_identifier}-final-snapshot"
 
