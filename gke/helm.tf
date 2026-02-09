@@ -8,6 +8,7 @@ resource "helm_release" "cert_manager" {
   chart            = "cert-manager"
   namespace        = "cert-manager"
   create_namespace = true
+  timeout          = 600 # 10 minutes
 
   set {
     name  = "installCRDs"
@@ -210,6 +211,46 @@ resource "helm_release" "superplane" {
   set {
     name  = "oidc.secretName"
     value = "superplane-oidc"
+  }
+
+  set {
+    name  = "podSecurityContext.runAsNonRoot"
+    value = "true"
+  }
+
+  set {
+    name  = "podSecurityContext.runAsUser"
+    value = "65534"
+  }
+
+  set {
+    name  = "podSecurityContext.fsGroup"
+    value = "65534"
+  }
+
+  set {
+    name  = "securityContext.allowPrivilegeEscalation"
+    value = "false"
+  }
+
+  set {
+    name  = "securityContext.readOnlyRootFilesystem"
+    value = "true"
+  }
+
+  set {
+    name  = "securityContext.runAsNonRoot"
+    value = "true"
+  }
+
+  set {
+    name  = "securityContext.capabilities.drop[0]"
+    value = "ALL"
+  }
+
+  set {
+    name  = "securityContext.seccompProfile.type"
+    value = "RuntimeDefault"
   }
 
   depends_on = [

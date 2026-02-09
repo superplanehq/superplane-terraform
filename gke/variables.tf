@@ -51,7 +51,7 @@ variable "cluster_name" {
 variable "cluster_version" {
   description = "Kubernetes version for the GKE cluster"
   type        = string
-  default     = "1.31"
+  default     = "1.34"
 }
 
 variable "node_count" {
@@ -125,4 +125,41 @@ variable "network" {
   description = "VPC network to use"
   type        = string
   default     = "default"
+}
+
+# -----------------------------------------------------------------------------
+# Optional Variables - Security
+# -----------------------------------------------------------------------------
+
+variable "enable_private_nodes" {
+  description = "Whether to enable private nodes (nodes without public IPs)"
+  type        = bool
+  default     = true
+}
+
+variable "master_authorized_cidr_blocks" {
+  description = "CIDR blocks authorized to access the GKE master (VPN IPs)"
+  type = list(object({
+    cidr_block   = string
+    display_name = string
+  }))
+  default = []
+}
+
+variable "master_ipv4_cidr_block" {
+  description = "CIDR block for the GKE master (required when enable_private_nodes is true)"
+  type        = string
+  default     = "172.16.0.0/28"
+}
+
+variable "gke_deletion_protection" {
+  description = "Enable deletion protection on the GKE cluster"
+  type        = bool
+  default     = true
+}
+
+variable "sql_deletion_protection" {
+  description = "Enable deletion protection on the Cloud SQL instance"
+  type        = bool
+  default     = true
 }

@@ -1,4 +1,48 @@
 # -----------------------------------------------------------------------------
+# RDS Parameter Group with Security Logging
+# -----------------------------------------------------------------------------
+
+resource "aws_db_parameter_group" "superplane" {
+  name   = "${var.db_instance_identifier}-params"
+  family = "postgres17"
+
+  parameter {
+    name  = "log_statement"
+    value = "all"
+  }
+
+  parameter {
+    name  = "log_connections"
+    value = "1"
+  }
+
+  parameter {
+    name  = "log_disconnections"
+    value = "1"
+  }
+
+  parameter {
+    name  = "log_checkpoints"
+    value = "1"
+  }
+
+  parameter {
+    name  = "log_lock_waits"
+    value = "1"
+  }
+
+  parameter {
+    name         = "log_min_duration_statement"
+    value        = "1000"
+    apply_method = "pending-reboot"
+  }
+
+  tags = {
+    Name = "${var.db_instance_identifier}-params"
+  }
+}
+
+# -----------------------------------------------------------------------------
 # RDS Subnet Group
 # -----------------------------------------------------------------------------
 
@@ -8,6 +52,11 @@ resource "aws_db_subnet_group" "superplane" {
 
   tags = {
     Name = "${var.cluster_name}-db-subnet-group"
+  }
+
+  # Ensure RDS instance is deleted before subnet group during destroy
+  lifecycle {
+    create_before_destroy = false
   }
 }
 
@@ -62,6 +111,7 @@ resource "aws_db_instance" "superplane" {
 
   db_subnet_group_name   = aws_db_subnet_group.superplane.name
   vpc_security_group_ids = [aws_security_group.rds.id]
+  parameter_group_name   = aws_db_parameter_group.superplane.name
 
   publicly_accessible = false
   multi_az            = false
@@ -70,7 +120,7 @@ resource "aws_db_instance" "superplane" {
   backup_window           = "03:00-04:00"
   maintenance_window      = "Mon:04:00-Mon:05:00"
 
-  deletion_protection = true
+  deletion_protection = var.rds_deletion_protection
   skip_final_snapshot = false
   final_snapshot_identifier = "${var.db_instance_identifier}-final-snapshot"
 

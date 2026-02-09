@@ -1,4 +1,25 @@
 # -----------------------------------------------------------------------------
+# KMS Key for EKS Secrets Encryption
+# -----------------------------------------------------------------------------
+
+resource "aws_kms_key" "eks_secrets" {
+  count                   = var.enable_secrets_encryption ? 1 : 0
+  description             = "KMS key for EKS secrets encryption - ${var.cluster_name}"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+
+  tags = {
+    Name = "${var.cluster_name}-eks-secrets-key"
+  }
+}
+
+resource "aws_kms_alias" "eks_secrets" {
+  count         = var.enable_secrets_encryption ? 1 : 0
+  name          = "alias/${var.cluster_name}-eks-secrets"
+  target_key_id = aws_kms_key.eks_secrets[0].key_id
+}
+
+# -----------------------------------------------------------------------------
 # EKS Cluster IAM Role
 # -----------------------------------------------------------------------------
 
@@ -34,8 +55,21 @@ resource "aws_eks_cluster" "superplane" {
   vpc_config {
     subnet_ids              = concat(aws_subnet.public[*].id, aws_subnet.private[*].id)
     endpoint_private_access = true
-    endpoint_public_access  = true
+    endpoint_public_access  = var.enable_public_access
+    public_access_cidrs     = length(var.vpn_cidr_blocks) > 0 ? var.vpn_cidr_blocks : null
   }
+
+  dynamic "encryption_config" {
+    for_each = var.enable_secrets_encryption ? [1] : []
+    content {
+      provider {
+        key_arn = aws_kms_key.eks_secrets[0].arn
+      }
+      resources = ["secrets"]
+    }
+  }
+  
+  enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_policy
@@ -76,9 +110,26 @@ resource "aws_iam_role_policy_attachment" "eks_container_registry" {
   role       = aws_iam_role.eks_nodes.name
 }
 
-resource "aws_iam_role_policy_attachment" "eks_ebs_csi_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-  role       = aws_iam_role.eks_nodes.name
+# -----------------------------------------------------------------------------
+# Launch Template with IMDSv2 Enforcement
+# -----------------------------------------------------------------------------
+
+resource "aws_launch_template" "eks_nodes" {
+  name_prefix = "${var.cluster_name}-nodes-"
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"  # Enforces IMDSv2
+    http_put_response_hop_limit = 1
+    instance_metadata_tags      = "enabled"
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "${var.cluster_name}-node"
+    }
+  }
 }
 
 # -----------------------------------------------------------------------------
@@ -99,11 +150,15 @@ resource "aws_eks_node_group" "superplane" {
 
   instance_types = [var.instance_type]
 
+  launch_template {
+    id      = aws_launch_template.eks_nodes.id
+    version = aws_launch_template.eks_nodes.latest_version
+  }
+
   depends_on = [
     aws_iam_role_policy_attachment.eks_worker_node_policy,
     aws_iam_role_policy_attachment.eks_cni_policy,
-    aws_iam_role_policy_attachment.eks_container_registry,
-    aws_iam_role_policy_attachment.eks_ebs_csi_policy
+    aws_iam_role_policy_attachment.eks_container_registry
   ]
 }
 
@@ -148,7 +203,6 @@ resource "aws_eks_addon" "ebs_csi" {
 
   depends_on = [
     aws_eks_node_group.superplane,
-    aws_iam_role_policy_attachment.eks_ebs_csi_policy,
     aws_iam_role_policy_attachment.ebs_csi
   ]
 }

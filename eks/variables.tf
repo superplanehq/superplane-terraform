@@ -104,6 +104,12 @@ variable "db_password" {
   sensitive   = true
 }
 
+variable "rds_deletion_protection" {
+  description = "Enable deletion protection for RDS instance. Set to false to allow deletion during terraform destroy."
+  type        = bool
+  default     = true
+}
+
 # -----------------------------------------------------------------------------
 # Optional Variables - SuperPlane
 # -----------------------------------------------------------------------------
@@ -128,4 +134,26 @@ variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string
   default     = "10.0.0.0/16"
+}
+
+# -----------------------------------------------------------------------------
+# Optional Variables - Security
+# -----------------------------------------------------------------------------
+
+variable "enable_secrets_encryption" {
+  description = "Enable encryption of Kubernetes secrets at rest using KMS. Note: Cannot be enabled on existing clusters."
+  type        = bool
+  default     = false
+}
+
+variable "vpn_cidr_blocks" {
+  description = "CIDR blocks allowed to access the EKS API server (VPN IPs). Set to restrict public access."
+  type        = list(string)
+  default     = []
+}
+
+variable "enable_public_access" {
+  description = "Whether to enable public access to the EKS API server. Set to false to restrict to VPN only."
+  type        = bool
+  default     = true
 }
