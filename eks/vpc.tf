@@ -156,6 +156,10 @@ resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
   tags = {
     Name = "${var.cluster_name}-vpc-flow-logs"
   }
+
+  lifecycle {
+    ignore_changes = [name]
+  }
 }
 
 resource "aws_iam_role" "vpc_flow_logs" {
