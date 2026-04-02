@@ -27,7 +27,7 @@ resource "random_password" "jwt_secret" {
 }
 
 resource "random_password" "encryption_key" {
-  length  = 64
+  length  = 32
   special = false
 }
 
