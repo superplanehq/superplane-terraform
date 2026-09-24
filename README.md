@@ -1,3 +1,8 @@
+> **This repository is archived.**
+>
+> The Terraform configuration now lives in the SuperPlane repository:
+> [release/terraform](https://github.com/superplanehq/superplane/tree/main/release/terraform).
+
 # SuperPlane Installation with Terraform
 
 Terraform configurations to deploy [SuperPlane](https://github.com/superplanehq/superplane) on
